@@ -1,2 +1,3 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Force LF line endings on all platforms.
+# Prevents CRLF issues inside Docker containers on Windows.
+* text=auto eol=lf

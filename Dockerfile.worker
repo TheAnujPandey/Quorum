@@ -1,0 +1,3 @@
+FROM quorum-base:latest
+
+CMD ["python", "-m", "worker.main"]

@@ -1,0 +1,14 @@
+FROM python:3.11-slim AS base
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml README.md ./
+COPY api ./api
+COPY backend ./backend
+COPY worker ./worker
+COPY db ./db
+
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir .
