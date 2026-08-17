@@ -214,10 +214,68 @@ async def start_embedding(session_id: UUID) -> dict:
 
 @router.delete("/{session_id}")
 async def clear_session(session_id: UUID) -> dict:
+    from api.core.config import settings as app_settings
+
     pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT blob_key FROM sessions WHERE session_id = $1", session_id,
+        )
+
+    # Delete Qdrant vectors for this session
+    try:
+        from api.core.qdrant_client import get_qdrant
+        from qdrant_client.http import models as qmodels
+
+        client = await get_qdrant()
+        await client.delete(
+            collection_name=app_settings.qdrant_collection,
+            points_selector=qmodels.FilterSelector(
+                filter=qmodels.Filter(
+                    must=[
+                        qmodels.FieldCondition(
+                            key="session_id",
+                            match=qmodels.MatchValue(value=str(session_id)),
+                        )
+                    ]
+                )
+            ),
+        )
+    except Exception as exc:
+        logger.warning("clear_session_qdrant_failed", session_id=str(session_id), error=str(exc))
+
+    # Delete blob file from S3/MinIO
+    blob_key = row["blob_key"] if row else None
+    if blob_key:
+        try:
+            if app_settings.storage_backend == "s3":
+                from api.core.blob_store import get_s3_client
+                async with await get_s3_client() as s3:
+                    await s3.delete_object(Bucket=app_settings.minio_bucket, Key=blob_key)
+            elif app_settings.storage_backend == "local":
+                import os
+                local_path = os.path.join(app_settings.local_data_dir, blob_key)
+                if os.path.exists(local_path):
+                    os.remove(local_path)
+        except Exception as exc:
+            logger.warning("clear_session_blob_failed", session_id=str(session_id), error=str(exc))
+
+    # Delete DB rows
     async with pool.acquire() as conn:
         await conn.execute("DELETE FROM draft_chunks WHERE session_id = $1", session_id)
         await conn.execute("DELETE FROM labeled_qa WHERE session_id = $1", session_id)
         await conn.execute("DELETE FROM sessions WHERE session_id = $1", session_id)
-    await cache_session(str(session_id), {"upload_status": "cleared"})
+
+    # Delete Redis/memory cache entry
+    try:
+        from api.core.redis_client import _use_redis, get_redis
+        if await _use_redis():
+            redis = await get_redis()
+            await redis.delete(f"session:{session_id}")
+        else:
+            from api.core.memory_cache import _store
+            _store.pop(f"session:{session_id}", None)
+    except Exception:
+        pass
+
     return {"ok": True}

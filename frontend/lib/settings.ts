@@ -5,6 +5,7 @@ export type AppSettings = {
 };
 
 const STORAGE_KEY = "quorum_settings";
+const API_KEY_STORAGE_KEY = "quorum_api_key";
 
 export const DEFAULT_API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -28,11 +29,11 @@ export function loadSettings(): AppSettings {
   if (typeof window === "undefined") return DEFAULTS;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULTS;
-    const parsed = JSON.parse(raw) as Partial<AppSettings>;
+    const parsed = raw ? (JSON.parse(raw) as Partial<AppSettings>) : {};
+    const apiKey = sessionStorage.getItem(API_KEY_STORAGE_KEY) ?? "";
     return {
       apiUrl: parsed.apiUrl?.trim() || DEFAULTS.apiUrl,
-      openaiApiKey: parsed.openaiApiKey ?? DEFAULTS.openaiApiKey,
+      openaiApiKey: apiKey,
       openaiModel: parsed.openaiModel?.trim() || DEFAULTS.openaiModel,
     };
   } catch {
@@ -41,7 +42,15 @@ export function loadSettings(): AppSettings {
 }
 
 export function saveSettings(settings: AppSettings): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  sessionStorage.setItem(API_KEY_STORAGE_KEY, settings.openaiApiKey);
+  const { openaiApiKey: _, ...persistent } = settings;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(persistent));
+}
+
+export function clearApiKey(): void {
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem(API_KEY_STORAGE_KEY);
+  }
 }
 
 export function getApiBaseUrl(): string {
