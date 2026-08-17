@@ -25,6 +25,7 @@ import {
   startEmbedding,
   uploadFile,
 } from "@/lib/api-client";
+import { clearApiKey } from "@/lib/settings";
 
 type Step = "upload" | "chunk" | "preview" | "embed" | "ready";
 
@@ -190,6 +191,7 @@ export default function HomePage() {
         /* ignore */
       }
     }
+    clearApiKey();
     setSessionId(null);
     setJobId(null);
     setHistory([]);
