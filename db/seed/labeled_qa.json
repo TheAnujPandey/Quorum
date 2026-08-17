@@ -1,0 +1,27 @@
+[
+  {
+    "question": "What was the deployment force for complaint VA201301-0455?",
+    "expected_answer": "5.51 lbs",
+    "expected_source_ref": "row:VA201301-0455"
+  },
+  {
+    "question": "Which product is associated with complaint VA201301-0455?",
+    "expected_answer": "PROTEGE RX CAROTID STENT SYSTEM",
+    "expected_source_ref": "row:VA201301-0455"
+  },
+  {
+    "question": "What deployment force was measured for the Canada complaint VA201304-0301?",
+    "expected_answer": "5.2 lbs",
+    "expected_source_ref": "row:VA201304-0301"
+  },
+  {
+    "question": "What was the root cause for the Germany EVERFLEX complaint VA201302-0101?",
+    "expected_answer": "kinked delivery catheter",
+    "expected_source_ref": "row:VA201302-0101"
+  },
+  {
+    "question": "What deployment force was found for complaint VA201306-0511?",
+    "expected_answer": "5.51 lbs",
+    "expected_source_ref": "row:VA201306-0511"
+  }
+]
